@@ -1,0 +1,1394 @@
+openapi: 3.0.3
+info:
+  description: "Špecifikácia REST webových služieb slúžia pre detailný opis požadovanej\
+    \ funkcionality pre Semestrálny Projekt 2 \nv rámci predmetu B-VSA akademický\
+    \ rok 2022/2023.\n\nPre dopyty na väčšinu služieb (okrem createStudent a createTeacher)\
+    \ je potrebné byť prihlásený. Služby pracujú s Basic\nautentifikáciou. Každý š\
+    tudent a učiteľ je používateľ systému, ktorý sa môže prihlásiť.\nNiektoré služ\
+    by vyžadujú autorizáciu/oprávnenie pre ich dopyt. Služba, ktorá je obmedzená oprá\
+    vneniami, to má uvedené\nv popise služby.\n\nAk služba má vrátiť jeden objekt\
+    \ a nie je nájdený namiesto hodnoty null vráti odpoveď 404. V prípade nečakanej\
+    \ chyby\nmá byť odpoveď s kódom 500 a v správe dôvod vzniku chyby (správa zo vzniknutej\
+    \ Exception).\n"
+  license:
+    name: Unlicense license
+    url: https://unlicense.org
+  title: B-VSA Semestrálny Projekt 2
+  version: 1.0.0
+externalDocs:
+  description: Znenie celého zadania
+  url: https://github.com/Interes-Group/b-vsa-ls23-project2-solution/blob/master/README.md
+servers:
+- url: http://localhost:8080
+tags:
+- name: student
+- name: teacher
+- name: thesis
+paths:
+  /api/students:
+    get:
+      description: Získanie zoznamu všetkých študentov.
+      operationId: getAllStudents
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Student'
+                type: array
+          description: Zoznam všetkých študentov v systéme. Ak v systéme neexistujú
+            žiadny študenti je vrátení prázdny zoznam.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou\
+            \ autentifikačnou schémou. Kód v odpovedi je vždy 401.\n"
+          headers:
+            WWW_Authenticate:
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Requested resource was not found.
+            Objekt nebolo možné nájsť. Kód v odpovedi je vždy 404.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      security:
+      - basicAuth: []
+      summary: Get all students
+      tags:
+      - student
+      x-accepts: application/json
+    post:
+      description: |
+        Vytvorenie nového študenta. Po vytvorení je možné sa prihlásiť ako novo registrovaný študent.
+        Služba je verejne dostupná bez prihlásenia.
+      operationId: createStudent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStudentRequest'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+          description: Objekt novo vytvoreného študenta.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      summary: Create new student
+      tags:
+      - student
+      x-contentType: application/json
+      x-accepts: application/json
+  /api/students/{id}:
+    delete:
+      description: "Vymazanie študenta podľa identifikátora. \nVymazať študenta mô\
+        že iba učiteľ (t.j. prihlásený je učiteľ) alebo prihlásený študent s rovnaký\
+        m identifikátorom ako v dopyte.\n"
+      operationId: deleteStudent
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+          description: Objekt študenta ktorý bol vymazaný.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou\
+            \ autentifikačnou schémou. Kód v odpovedi je vždy 401.\n"
+          headers:
+            WWW_Authenticate:
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Authorized user doesn't have permission for the request.
+            Autentifikovaný používateľ nemá oprávnenie na dopyt. Kód v odpovedi je vždy 403.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Requested resource was not found.
+            Objekt nebolo možné nájsť. Kód v odpovedi je vždy 404.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      security:
+      - basicAuth: []
+      summary: Delete a student by id
+      tags:
+      - student
+      x-accepts: application/json
+    get:
+      description: Získanie študenta podľa identifikátora.
+      operationId: getStudent
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Student'
+          description: Objekt študenta so zadaným identifikátorom. V prípade, že taký
+            študent neexistuje tak je vrátená odpoveď 404.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou\
+            \ autentifikačnou schémou. Kód v odpovedi je vždy 401.\n"
+          headers:
+            WWW_Authenticate:
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Requested resource was not found.
+            Objekt nebolo možné nájsť. Kód v odpovedi je vždy 404.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      security:
+      - basicAuth: []
+      summary: Get a student by id
+      tags:
+      - student
+      x-accepts: application/json
+  /api/teachers:
+    get:
+      description: Získanie zoznamu všetkých učiteľov.
+      operationId: getAllTeachers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Teacher'
+                type: array
+          description: Zoznam všetkých učiteľov v systéme. Ak v systéme neexistujú
+            žiadny učitelia je vrátený prázdny zoznam.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou\
+            \ autentifikačnou schémou. Kód v odpovedi je vždy 401.\n"
+          headers:
+            WWW_Authenticate:
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Requested resource was not found.
+            Objekt nebolo možné nájsť. Kód v odpovedi je vždy 404.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      security:
+      - basicAuth: []
+      summary: Get all teachers
+      tags:
+      - teacher
+      x-accepts: application/json
+    post:
+      description: |
+        Vytvorenie nového učiteľa. Po vytvorení je možné sa prihlásiť ako novo registrovaný učiteľ.
+        Služba je verejne dostupná bez prihlásenia.
+      operationId: createTeacher
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTeacherRequest'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Teacher'
+          description: Objekt novo vytvoreného učiteľa.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      summary: Create new teacher
+      tags:
+      - teacher
+      x-contentType: application/json
+      x-accepts: application/json
+  /api/teachers/{id}:
+    delete:
+      description: |
+        Vymazanie učiteľa podľa identifikátora.
+        Vymazať učiteľa môže iba prihlásený učiteľ, ktorého identifikátor sa zhoduje s poskytnutým identifikátorom v dopyte.
+      operationId: deleteTeacher
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Teacher'
+          description: Objekt študenta ktorý bol vymazaný.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou\
+            \ autentifikačnou schémou. Kód v odpovedi je vždy 401.\n"
+          headers:
+            WWW_Authenticate:
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Authorized user doesn't have permission for the request.
+            Autentifikovaný používateľ nemá oprávnenie na dopyt. Kód v odpovedi je vždy 403.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Requested resource was not found.
+            Objekt nebolo možné nájsť. Kód v odpovedi je vždy 404.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      security:
+      - basicAuth: []
+      summary: Delete a teacher by id
+      tags:
+      - teacher
+      x-accepts: application/json
+    get:
+      description: Získanie učiteľa podľa identifikátora.
+      operationId: getTeacher
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Teacher'
+          description: Objekt učiteľa so zadaným identifikátorom. V prípade, že taký
+            študent neexistuje tak je vrátená odpoveď 404.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou\
+            \ autentifikačnou schémou. Kód v odpovedi je vždy 401.\n"
+          headers:
+            WWW_Authenticate:
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Requested resource was not found.
+            Objekt nebolo možné nájsť. Kód v odpovedi je vždy 404.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      security:
+      - basicAuth: []
+      summary: Get a teacher by id
+      tags:
+      - teacher
+      x-accepts: application/json
+  /api/theses:
+    get:
+      description: Získanie zoznamu záverečných prác.
+      operationId: getAllTheses
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Thesis'
+                type: array
+          description: Zoznam všetkých záverečných prác v systéme. Ak nie sú vypísané
+            žiadne práce je vrátený prázdny zoznam.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou\
+            \ autentifikačnou schémou. Kód v odpovedi je vždy 401.\n"
+          headers:
+            WWW_Authenticate:
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Requested resource was not found.
+            Objekt nebolo možné nájsť. Kód v odpovedi je vždy 404.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      security:
+      - basicAuth: []
+      summary: Get all theses
+      tags:
+      - thesis
+      x-accepts: application/json
+    post:
+      description: "Vytvorenie záverečnej práce. Vytvoriť záverečnú prácu môže iba\
+        \ učiteľ. \nVytvorená záverečná práca je vytvorená pod prihláseným učiteľ\
+        om.\n"
+      operationId: createThesis
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Thesis'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateThesisRequest'
+          description: Objekt novo vytvorenej záverečnej práce.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou\
+            \ autentifikačnou schémou. Kód v odpovedi je vždy 401.\n"
+          headers:
+            WWW_Authenticate:
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Authorized user doesn't have permission for the request.
+            Autentifikovaný používateľ nemá oprávnenie na dopyt. Kód v odpovedi je vždy 403.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      security:
+      - basicAuth: []
+      summary: Create new thesis
+      tags:
+      - thesis
+      x-contentType: application/json
+      x-accepts: application/json
+  /api/theses/{id}:
+    delete:
+      description: |
+        Vymazanie záverečnej práce podľa identifikátora.
+        Vymazať prácu môže iba prihlásený učiteľ, ktorý prácu vypísal.
+      operationId: deleteThesis
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Thesis'
+          description: Objekt záverečnej práce, ktorý bola vymazaná.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou\
+            \ autentifikačnou schémou. Kód v odpovedi je vždy 401.\n"
+          headers:
+            WWW_Authenticate:
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Authorized user doesn't have permission for the request.
+            Autentifikovaný používateľ nemá oprávnenie na dopyt. Kód v odpovedi je vždy 403.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Requested resource was not found.
+            Objekt nebolo možné nájsť. Kód v odpovedi je vždy 404.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      security:
+      - basicAuth: []
+      summary: Delete a thesis by id
+      tags:
+      - thesis
+      x-accepts: application/json
+    get:
+      description: Získanie záverečnej práce podľa identifikátora.
+      operationId: getThesis
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Thesis'
+          description: "Objekt záverečnej práce so zadaným identifikátorom. \nV prí\
+            pade, že taká záverečná práca neexistuje, tak je vrátená odpoveď 404.\n"
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou\
+            \ autentifikačnou schémou. Kód v odpovedi je vždy 401.\n"
+          headers:
+            WWW_Authenticate:
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Requested resource was not found.
+            Objekt nebolo možné nájsť. Kód v odpovedi je vždy 404.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      security:
+      - basicAuth: []
+      summary: Get a thesis by id
+      tags:
+      - thesis
+      x-accepts: application/json
+  /api/theses/{id}/assign:
+    post:
+      description: |
+        Priradenie záverečnej práce podľa identifikátora študentovi.
+        Ak je prihlásený študent v dopyte je práca priradená jemu.
+        Ak je prihlásený učiteľ je práca priradená študentovi podľa identifikátora v objekte tele dopytu.
+      operationId: assignThesis
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      requestBody:
+        $ref: '#/components/requestBodies/inline_object'
+        content:
+          application/json:
+            schema:
+              properties:
+                studentId:
+                  format: int64
+                  type: integer
+              type: object
+        description: Objekt s identifikátorom študenta v prípade ak je prihlásený
+          učiteľ. Ak je prihlásený študent telo je ignorované.
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Thesis'
+          description: Objekt záverečnej práce, ktorá bola priradená študentovi. Vrátený
+            objekt má obsahovať aj objekt študenta priradeného k prácu.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou\
+            \ autentifikačnou schémou. Kód v odpovedi je vždy 401.\n"
+          headers:
+            WWW_Authenticate:
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Authorized user doesn't have permission for the request.
+            Autentifikovaný používateľ nemá oprávnenie na dopyt. Kód v odpovedi je vždy 403.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Requested resource was not found.
+            Objekt nebolo možné nájsť. Kód v odpovedi je vždy 404.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      security:
+      - basicAuth: []
+      summary: Assign a thesis by id to a student
+      tags:
+      - thesis
+      x-contentType: application/json
+      x-accepts: application/json
+  /api/theses/{id}/submit:
+    post:
+      description: |
+        Odovzdanie záverečnej práce podľa identifikátora.
+        Ak je prihlásený študent v dopyte musí sa zhodovať so študentom priradeného k práci.
+        Ak je prihlásený učiteľ je práca odovzdaná študentom podľa identifikátora v objekte tele dopytu,
+        ktorý sa musí zhodovať so študentom priradeného k prác.
+      operationId: submitThesis
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      requestBody:
+        $ref: '#/components/requestBodies/inline_object_1'
+        content:
+          application/json:
+            schema:
+              properties:
+                studentId:
+                  format: int64
+                  type: integer
+              type: object
+        description: Objekt s identifikátorom študenta v prípade ak je prihlásený
+          učiteľ. Ak je prihlásený študent telo je ignorované.
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Thesis'
+          description: Objekt záverečnej práce, ktorá bola odovzdaná študentom.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou\
+            \ autentifikačnou schémou. Kód v odpovedi je vždy 401.\n"
+          headers:
+            WWW_Authenticate:
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Authorized user doesn't have permission for the request.
+            Autentifikovaný používateľ nemá oprávnenie na dopyt. Kód v odpovedi je vždy 403.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Requested resource was not found.
+            Objekt nebolo možné nájsť. Kód v odpovedi je vždy 404.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      security:
+      - basicAuth: []
+      summary: Submit a thesis by id assigned to a student
+      tags:
+      - thesis
+      x-contentType: application/json
+      x-accepts: application/json
+  /api/search/theses:
+    post:
+      description: Vyhľadanie záverečnej práce na základe kritérií tela dopytu.
+      operationId: searchTheses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              anyOf:
+              - properties:
+                  studentId:
+                    format: int64
+                    type: integer
+                type: object
+              - properties:
+                  teacherId:
+                    format: int64
+                    type: integer
+                type: object
+        description: "Telo dopytu je jeden z možných objektov. Buď sú práce vyhľadané\
+          \ podľa priradeného študenta, \nalebo podľa učiteľa, ktorý vypísal závereč\
+          nú prácu.\n"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Thesis'
+                type: array
+          description: Zoznam záverečných prác vyhovujúcich kritériu. Ak nie sú vypísané
+            žiadne práce je vrátený prázdny zoznam.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou\
+            \ autentifikačnou schémou. Kód v odpovedi je vždy 401.\n"
+          headers:
+            WWW_Authenticate:
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: |
+            Internal server error.
+            Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+      security:
+      - basicAuth: []
+      summary: Search theses by a teacher or a student
+      tags:
+      - thesis
+      x-contentType: application/json
+      x-accepts: application/json
+components:
+  requestBodies:
+    inline_object_1:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/inline_object_1'
+      required: false
+    inline_object:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/inline_object'
+      required: false
+  responses:
+    Unauthorized:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Message'
+      description: "Unauthorized request. \nDopyt musí byt autorizovaný platnou autentifikač\
+        nou schémou. Kód v odpovedi je vždy 401.\n"
+      headers:
+        WWW_Authenticate:
+          explode: false
+          schema:
+            type: string
+          style: simple
+    Forbidden:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Message'
+      description: |
+        Authorized user doesn't have permission for the request.
+        Autentifikovaný používateľ nemá oprávnenie na dopyt. Kód v odpovedi je vždy 403.
+    NotFound:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Message'
+      description: |
+        Requested resource was not found.
+        Objekt nebolo možné nájsť. Kód v odpovedi je vždy 404.
+    ServerError:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Message'
+      description: |
+        Internal server error.
+        Nepredvídateľná chyba na servery pri spracovaní dopytu. Kód v odpovedi je vždy 500.
+  schemas:
+    Student:
+      description: Objekt študenta.
+      example:
+        year: 1
+        thesis:
+          registrationNumber: registrationNumber
+          author:
+            year: 4
+            thesis: 1
+            name: name
+            term: 7
+            id: 3
+            programme: programme
+            aisId: 2
+            email: email
+          description: description
+          publishedOn: 2000-01-23
+          id: 5
+          title: title
+          department: department
+          deadline: 2000-01-23
+          type: BACHELOR
+          supervisor:
+            password: password
+            name: name
+            institute: institute
+            id: 2
+            theses:
+            - 9
+            - 9
+            department: department
+            aisId: 7
+            email: email
+          status: FREE_TO_TAKE
+        name: name
+        term: 5
+        id: 0
+        programme: programme
+        aisId: 6
+        email: email
+      properties:
+        id:
+          description: Id študenta. V prípade ak je použité AIS ID ako identifikátor
+            študenta tak je táto hodnota rovnaká ako v atribúte aisId.
+          format: int64
+          type: integer
+        aisId:
+          description: AIS ID študenta. Zadané pri vytvorení študenta. Musí byť unikátne
+            v rámci všetkých študentov.
+          format: int64
+          type: integer
+        name:
+          type: string
+        email:
+          format: email
+          type: string
+        year:
+          type: integer
+        term:
+          type: integer
+        programme:
+          type: string
+        thesis:
+          $ref: '#/components/schemas/Thesis'
+      required:
+      - aisId
+      - email
+      - id
+      type: object
+    CreateStudentRequest:
+      description: Objekt študenta pre vytvorenie nového študenta.
+      example:
+        password: password
+        year: 6
+        name: name
+        term: 1
+        programme: programme
+        aisId: 0
+        email: email
+      properties:
+        aisId:
+          description: AIS ID študenta. Musí byť unikátne v rámci všetkých študentov.
+          format: int64
+          type: integer
+        name:
+          type: string
+        email:
+          format: email
+          type: string
+        password:
+          description: Heslo pre prihlásenie študenta. Heslo musí byť zaslané enkódované
+            v BASE64.
+          format: password
+          type: string
+        year:
+          type: integer
+        term:
+          type: integer
+        programme:
+          type: string
+      required:
+      - aisId
+      - email
+      - name
+      - password
+      type: object
+    StudentAltResponse:
+      description: Objekt študenta s id záverečnej práce namiesto objektu.
+      example:
+        year: 4
+        thesis: 1
+        name: name
+        term: 7
+        id: 3
+        programme: programme
+        aisId: 2
+        email: email
+      properties:
+        id:
+          description: Id študenta. V prípade ak je použité AIS ID ako identifikátor
+            študenta tak je táto hodnota rovnaká ako v atribúte aisId.
+          format: int64
+          type: integer
+        aisId:
+          description: AIS ID študenta. Zadané pri vytvorení študenta. Musí byť unikátne
+            v rámci všetkých študentov.
+          format: int64
+          type: integer
+        name:
+          type: string
+        email:
+          format: email
+          type: string
+        year:
+          type: integer
+        term:
+          type: integer
+        programme:
+          type: string
+        thesis:
+          description: ID záverečnej práce priradené študentovi. Ak študent nemá priradenú
+            prácu, tento atribút je vynechaný.
+          format: int64
+          type: integer
+      required:
+      - aisId
+      - email
+      - id
+      type: object
+    Teacher:
+      description: Objekt učiteľa.
+      example:
+        name: name
+        institute: institute
+        id: 0
+        theses:
+        - registrationNumber: registrationNumber
+          author:
+            year: 4
+            thesis: 1
+            name: name
+            term: 7
+            id: 3
+            programme: programme
+            aisId: 2
+            email: email
+          description: description
+          publishedOn: 2000-01-23
+          id: 5
+          title: title
+          department: department
+          deadline: 2000-01-23
+          type: BACHELOR
+          supervisor:
+            password: password
+            name: name
+            institute: institute
+            id: 2
+            theses:
+            - 9
+            - 9
+            department: department
+            aisId: 7
+            email: email
+          status: FREE_TO_TAKE
+        - registrationNumber: registrationNumber
+          author:
+            year: 4
+            thesis: 1
+            name: name
+            term: 7
+            id: 3
+            programme: programme
+            aisId: 2
+            email: email
+          description: description
+          publishedOn: 2000-01-23
+          id: 5
+          title: title
+          department: department
+          deadline: 2000-01-23
+          type: BACHELOR
+          supervisor:
+            password: password
+            name: name
+            institute: institute
+            id: 2
+            theses:
+            - 9
+            - 9
+            department: department
+            aisId: 7
+            email: email
+          status: FREE_TO_TAKE
+        department: department
+        aisId: 6
+        email: email
+      properties:
+        id:
+          description: Id učiteľa. V prípade ak je použité AIS ID ako identifikátor
+            učiteľa tak je táto hodnota rovnaká ako v atribúte aisId.
+          format: int64
+          type: integer
+        aisId:
+          description: AIS ID učiteľa. Zadané pri vytvorení učiteľa. Musí byť unikátne
+            v rámci všetkých učiteľov.
+          format: int64
+          type: integer
+        name:
+          type: string
+        email:
+          format: email
+          type: string
+        institute:
+          type: string
+        department:
+          type: string
+        theses:
+          items:
+            $ref: '#/components/schemas/Thesis'
+          type: array
+      required:
+      - aisId
+      - email
+      - id
+      type: object
+    CreateTeacherRequest:
+      description: Objekt učiteľa pre vytvorenie nového učiteľa.
+      example:
+        password: password
+        name: name
+        institute: institute
+        department: department
+        aisId: 0
+        email: email
+      properties:
+        aisId:
+          description: AIS ID učiteľa. Musí byť unikátne v rámci všetkých učiteľov.
+          format: int64
+          type: integer
+        name:
+          type: string
+        email:
+          format: email
+          type: string
+        password:
+          description: Heslo pre prihlásenie učiteľa. Heslo musí byť zaslané enkódované
+            v BASE64.
+          format: password
+          type: string
+        institute:
+          type: string
+        department:
+          type: string
+      required:
+      - aisId
+      - email
+      - name
+      - password
+      type: object
+    TeacherAltResponse:
+      description: Objekt študenta s identifikátormi záverečnej práce namiesto kolekcie
+        objektov.
+      example:
+        password: password
+        name: name
+        institute: institute
+        id: 2
+        theses:
+        - 9
+        - 9
+        department: department
+        aisId: 7
+        email: email
+      properties:
+        id:
+          description: Id učiteľa. V prípade ak je použité AIS ID ako identifikátor
+            učiteľa tak je táto hodnota rovnaká ako v atribúte aisId.
+          format: int64
+          type: integer
+        aisId:
+          description: AIS ID učiteľa. Zadané pri vytvorení učiteľa. Musí byť unikátne
+            v rámci všetkých učiteľov.
+          format: int64
+          type: integer
+        name:
+          type: string
+        email:
+          format: email
+          type: string
+        password:
+          format: password
+          type: string
+        institute:
+          type: string
+        department:
+          type: string
+        theses:
+          description: ID záverečných prác vytvorené učiteľom. Ak učiteľ nevytvoril
+            žiadne záverečné práce je tento atribút vynechaný.
+          items:
+            format: int64
+            type: integer
+          type: array
+      required:
+      - aisId
+      - email
+      - id
+      type: object
+    Thesis:
+      description: Objekt záverečnej práce.
+      example:
+        registrationNumber: registrationNumber
+        author:
+          year: 4
+          thesis: 1
+          name: name
+          term: 7
+          id: 3
+          programme: programme
+          aisId: 2
+          email: email
+        description: description
+        publishedOn: 2000-01-23
+        id: 5
+        title: title
+        department: department
+        deadline: 2000-01-23
+        type: BACHELOR
+        supervisor:
+          password: password
+          name: name
+          institute: institute
+          id: 2
+          theses:
+          - 9
+          - 9
+          department: department
+          aisId: 7
+          email: email
+        status: FREE_TO_TAKE
+      properties:
+        id:
+          format: int64
+          type: integer
+        registrationNumber:
+          pattern: ^FEI-\w+$
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        department:
+          type: string
+        supervisor:
+          $ref: '#/components/schemas/TeacherAltResponse'
+        author:
+          $ref: '#/components/schemas/StudentAltResponse'
+        publishedOn:
+          format: date
+          type: string
+        deadline:
+          format: date
+          type: string
+        type:
+          enum:
+          - BACHELOR
+          - MASTER
+          - DISSERTATION
+          type: string
+        status:
+          enum:
+          - FREE_TO_TAKE
+          - IN_PROGRESS
+          - SUBMITTED
+          type: string
+      required:
+      - department
+      - id
+      - registrationNumber
+      - supervisor
+      - title
+      - type
+      type: object
+    CreateThesisRequest:
+      description: Objekt záverečnej práce pre vytvorenie novej záverečnej práce.
+      example:
+        registrationNumber: registrationNumber
+        description: description
+        title: title
+        type: BACHELOR
+      properties:
+        registrationNumber:
+          pattern: ^FEI-\w+$
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          enum:
+          - BACHELOR
+          - MASTER
+          - DISSERTATION
+          type: string
+      required:
+      - registrationNumber
+      - title
+      - type
+      type: object
+    Message:
+      description: Objekt správy pre vrátenie informácii o dopyte. Využité najmä v
+        prípade vrátenia odpovedi pri chybe dopytu alebo spracovania.
+      properties:
+        code:
+          pattern: ^\d{3}$
+          type: integer
+        message:
+          type: string
+        error:
+          $ref: '#/components/schemas/Message_error'
+      required:
+      - code
+      - message
+      type: object
+    inline_object:
+      properties:
+        studentId:
+          format: int64
+          type: integer
+      type: object
+    inline_object_1:
+      properties:
+        studentId:
+          format: int64
+          type: integer
+      type: object
+    Message_error:
+      properties:
+        type:
+          type: string
+        trace:
+          type: string
+      type: object
+  securitySchemes:
+    basicAuth:
+      scheme: basic
+      type: http
+
